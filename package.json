@@ -7,18 +7,12 @@
   "types": "lib/typescript/index.d.ts",
   "react-native": "src/index.tsx",
   "source": "src/index.tsx",
-  "bin": {
-    "react-native-live-activities-setup": "./bin/react-native-live-activities-setup"
-  },
   "files": [
     "src",
     "lib",
     "ios",
     "android",
-    "react-native-live-activities.podspec",
-    "scripts",
-    "plugin",
-    "bin"
+    "react-native-live-activities.podspec"
   ],
   "scripts": {
     "test": "jest",
@@ -28,8 +22,7 @@
     "release": "release-it",
     "example": "yarn --cwd example",
     "pods": "cd example/ios && pod install",
-    "bootstrap": "yarn example && yarn && yarn pods",
-    "postinstall": "node scripts/postinstall.js"
+    "bootstrap": "yarn example && yarn && yarn pods"
   },
   "keywords": [
     "react-native",

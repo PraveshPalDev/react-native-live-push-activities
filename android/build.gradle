@@ -1,0 +1,34 @@
+buildscript {
+  if (project == rootProject) {
+    repositories {
+      google()
+      mavenCentral()
+    }
+
+    dependencies {
+      classpath "com.android.tools.build:gradle:7.2.1"
+      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.0"
+    }
+  }
+}
+
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
+
+android {
+  compileSdkVersion 33
+  defaultConfig {
+    minSdkVersion 21
+    targetSdkVersion 33
+  }
+}
+
+repositories {
+  mavenCentral()
+  google()
+}
+
+dependencies {
+  implementation "com.facebook.react:react-native:+"
+  implementation "org.jetbrains.kotlin:kotlin-stdlib:1.7.0"
+}

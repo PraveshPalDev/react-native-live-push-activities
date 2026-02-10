@@ -1,115 +1,97 @@
-# 🚀 React Native Live Activities
+# 🚀 React Native Push & Live Activities (Cross-Platform)
 
-A **simplified, battle-tested** library to implement iOS Live Activities (Dynamic Island & Lock Screen) in React Native.
+<div align="center">
+  <h3>
+    The ultimate library for iOS Dynamic Island, Lock Screen Activities & Android Compatibility
+  </h3>
+  <p>
+    Seamlessly integrate iOS Live Activities with React Native. <br/>
+    Includes complete <b>no-crash</b> support for Android & Expo (Development Builds).
+  </p>
+</div>
 
-- ✅ **iOS**: Full Native implementation with 4 pre-built templates.
-- ✅ **Android**: Safe stub implementation (prevents crashes, allows shared code).
-- ✅ **Zero Config** for Android.
-- ✅ **TypeScript** support out of the box.
+---
+
+## 🔥 Features
+
+- **iOS 16+ Support**: Full Dynamic Island & Lock Screen Live Activities.
+- **Push Notification Support**: Get push tokens to update activities remotely.
+- **Android Safe**: Methods are safe no-ops on Android to prevent crashes (write once, run everywhere).
+- **TypeScript First**: Fully typed API.
+- **Expo Compatible**: Works with Expo Development Builds (via Prebuild).
+- **✨ Generic / Custom Activities**: Send ANY data structure without modifying native code!
 
 ---
 
 ## 📦 Installation
 
 ```bash
-npm install react-native-live-activities
+# npm
+npm install react-native-live-push-activities
+
+# yarn
+yarn add react-native-live-push-activities
+```
+
+### iOS Setup (Mobile Linking)
+
+```bash
 cd ios && pod install
 ```
 
 ---
 
-## 🍎 iOS Configuration (Required)
+## 🍎 iOS Implementation Guide (Deep Dive)
 
-Live Activities require a **Widget Extension** in your iOS app. Follow these steps carefully.
-
-### 1. Update `Info.plist`
-
-Open your `ios/YourApp/Info.plist` and add:
-
-```xml
-<key>NSSupportsLiveActivities</key>
-<true/>
-```
-
-### 2. Create a Widget Extension
+### 1. Enable Capabilities
 
 1. Open your project in Xcode (`.xcworkspace`).
-2. Go to **File > New > Target**.
-3. Search for **Widget Extension**.
-4. Name it (e.g., `LiveActivityExtension`).
-5. **Ensure "Include Live Activity" is CHECKED.**
+2. Select your **Project Target** > **Signing & Capabilities**.
+3. Add **Push Notifications** capability.
+4. Add to `Info.plist`:
+   ```xml
+   <key>NSSupportsLiveActivities</key>
+   <true/>
+   ```
 
-### 3. Setup Attributes (Crucial!)
+### 2. Create Widget Extension
 
-Your Widget Extension needs to know the data structure sent by React Native.
-**Create a new Swift file** in your **Widget Extension** folder named `ActivityAttributes.swift` and paste this code:
+1. **File > New > Target** > **Widget Extension**.
+2. CHECK **"Include Live Activity"**.
+3. Name it (e.g., `LiveActivityExtension`).
+
+### 3. Setup Attributes (The "Bridge")
+
+You must define the exact structs that the React Native library expects.
+Create a file named `ActivityAttributes.swift` in your **Widget Extension** and paste this:
 
 ```swift
 import ActivityKit
-import Foundation
+import SwiftUI
 
-// ⚠️ COPY THIS EXACTLY to your Widget Extension
-// These match the structures in the React Native library
-
+// 1. Pre-built Template: Ride Tracking
 public struct RideTrackingAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
         var status: String
-        var currentLocation: String?
         var estimatedArrival: Date
-        var distance: Double?
+        var driverName: String?
     }
-    var driverName: String
-    var vehicleNumber: String
-    var vehicleType: String?
-    var pickup: String
-    var dropoff: String
-    var driverPhoto: String?
+    var vehicleModel: String
 }
 
-public struct DeliveryTrackingAttributes: ActivityAttributes {
+// 2. ✨ GENERIC / CUSTOM ACTIVITY (Recommended for flexibility)
+// This allows you to send ANY JSON data from React Native!
+public struct GenericActivityAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
-        var status: String
-        var currentLocation: String?
-        var estimatedArrival: Date
-        var stopsRemaining: Int?
+        var data: String // JSON string of your dynamic content
     }
-    var courierName: String
-    var orderNumber: String
-    var orderItems: String?
-    var deliveryAddress: String?
-}
-
-public struct SportsScoreAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
-        var homeScore: Int
-        var awayScore: Int
-        var period: String
-        var timeRemaining: String?
-        var lastPlay: String?
-        var isLive: Bool
-    }
-    var homeTeam: String
-    var awayTeam: String
-    var homeTeamLogo: String?
-    var awayTeamLogo: String?
-    var league: String?
-}
-
-public struct TimerAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
-        var endTime: Date
-        var isPaused: Bool
-        var remainingSeconds: Double?
-    }
-    var title: String
-    var description: String?
-    var icon: String?
+    var fixedData: String // JSON string of your static content
 }
 ```
 
-### 4. Create the UI
+### 4. Create the UI (Widget Bundle)
 
-Open your `LiveActivityExtensionBundle.swift` (or the main file of your extension) and ensure you handle these activities. Here is a **complete example** of a generic widget that supports all 4 templates:
+In `LiveActivityExtensionBundle.swift`:
 
 ```swift
 import WidgetKit
@@ -119,42 +101,32 @@ import SwiftUI
 struct LiveActivityBundle: WidgetBundle {
     var body: some Widget {
         RideTrackingWidget()
-        // Add others if needed: DeliveryWidget(), SportsWidget(), TimerWidget()
+        GenericActivityWidget()
     }
 }
 
-struct RideTrackingWidget: Widget {
+// Example UI for Generic Activity
+struct GenericActivityWidget: Widget {
     var body: some WidgetConfiguration {
-        ActivityConfiguration(for: RideTrackingAttributes.self) { context in
-            // 📱 Lock Screen UI
-            VStack {
-                Text("Ride: \(context.attributes.driverName)")
-                Text("Status: \(context.state.status)")
-            }
-            .activityBackgroundTint(Color.black)
-            .activitySystemActionForegroundColor(Color.white)
+        ActivityConfiguration(for: GenericActivityAttributes.self) { context in
+            // Parse JSON manually here if needed
+            // let data = try? JSONDecoder().decode(MyData.self, from: context.state.data.data(using: .utf8)!)
 
+            VStack {
+                Text("Custom Activity")
+                Text(context.state.data) // Displays raw JSON (parse this!)
+            }
         } dynamicIsland: { context in
-            // 🏝️ Dynamic Island UI
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) {
-                    Text("🚕")
-                }
-                DynamicIslandExpandedRegion(.trailing) {
-                    Text(context.state.status)
-                }
                 DynamicIslandExpandedRegion(.center) {
-                    Text(context.attributes.driverName)
-                }
-                DynamicIslandExpandedRegion(.bottom) {
-                    Text("Arrival: \(context.state.estimatedArrival, style: .time)")
+                    Text("Dynamic Island")
                 }
             } compactLeading: {
-                Text("🚕")
+                Text("L")
             } compactTrailing: {
-                Text(context.state.status)
+                Text("T")
             } minimal: {
-                Text("🚕")
+                Text("M")
             }
         }
     }
@@ -163,93 +135,102 @@ struct RideTrackingWidget: Widget {
 
 ---
 
-## 🤖 Android Usage (Platform Safe)
+## 💻 API & Usage
 
-On Android, all methods are **safe no-ops**. They resolve immediately without error.
-This allows you to write one shared codebase:
+### Method 1: Using Pre-built Templates
 
-```javascript
-// This code is safe to run on Android!
-// It will just return a dummy ID and do nothing.
-await LiveActivities.RideTracking.start(...)
+Best for improved type safety with standard use cases.
+
+```typescript
+import { Templates } from 'react-native-live-push-activities';
+
+// Start
+const activityId = await Templates.RideTracking.start(
+  { vehicleModel: 'Tesla Y' },
+  { status: 'Arriving', estimatedArrival: Date.now() + 60000 }
+);
+
+// Update
+await Templates.RideTracking.update(activityId, {
+  status: 'Arrived',
+});
+```
+
+### Method 2: Custom / Generic Activity (Data-Driven)
+
+Pass any object, and it will be serialized as JSON to the `GenericActivityAttributes` struct.
+
+```typescript
+import LiveActivities from 'react-native-live-push-activities';
+
+// 1. Start Activity
+const activityId = await LiveActivities.startActivity({
+  activityType: 'GenericActivity', // Matches the Swift struct
+  attributes: {
+    customId: '123',
+    type: 'flight_status',
+  },
+  contentState: {
+    flight: 'AA123',
+    status: 'Boarding',
+    gate: 'A4',
+  },
+});
+
+// 2. Update (Pass new state object)
+await LiveActivities.updateActivity(activityId, {
+  contentState: {
+    flight: 'AA123',
+    status: 'Departed',
+    gate: 'A4',
+  },
+});
 ```
 
 ---
 
-## 📖 Usage Examples
+## 🤖 Android Usage
 
-### 1. Ride Tracking (Uber/Lyft style)
-
-```typescript
-import { Templates } from 'react-native-live-activities';
-
-// Start Activity
-const activityId = await Templates.RideTracking.start(
-  {
-    driverName: 'John Doe',
-    vehicleNumber: 'ABC-123',
-    pickup: 'Central Station',
-    dropoff: 'Airport',
-  },
-  {
-    status: 'on-the-way',
-    estimatedArrival: Date.now() + 15 * 60 * 1000, // 15 mins
-    distance: 3.5,
-  }
-);
-
-// Update Status
-await Templates.RideTracking.update(activityId, {
-  status: 'arriving',
-  distance: 0.5,
-});
-
-// End (Ride Complete)
-await Templates.RideTracking.complete(activityId);
-```
-
-### 2. Delivery (Food/Package)
+The library provides safe "No-Op" methods on Android. It won't crash, but it won't show anything.
+To implement a similar UI on Android (sticky notification), use `@notifee/react-native`.
 
 ```typescript
-import { Templates } from 'react-native-live-activities';
+import { Platform } from 'react-native';
+import LiveActivities from 'react-native-live-push-activities';
 
-const id = await Templates.DeliveryTracking.start(
-  { courierName: 'Mike', orderNumber: '#8821' },
-  { status: 'preparing', estimatedArrival: Date.now() + 3000000 }
-);
+if (Platform.OS === 'ios') {
+  await LiveActivities.startActivity(...);
+} else {
+  // Use Notifee for Android
+}
 ```
 
-### 3. Timer (Countdown)
+---
 
-```typescript
-import { Templates } from 'react-native-live-activities';
+## 🖤 Usage with Expo (CNG)
 
-const id = await Templates.Timer.start(
-  { title: 'Workout' },
-  60 // duration in seconds
-);
-
-// Pause
-await Templates.Timer.pause(id);
-
-// Resume (with new remaining time)
-await Templates.Timer.resume(id, 30);
-```
+1. `npx expo install react-native-live-push-activities`
+2. Run `npx expo prebuild` to generate the ios/android folders.
+3. Open `ios/YourApp.xcworkspace`.
+4. Create the **Widget Extension** manually (Step 2 & 3 in Guide).
+5. Run `npx expo run:ios`.
 
 ---
 
 ## ❓ Troubleshooting
 
-**"The package ... doesn't seem to be linked"**
+**Token is nil?**
 
-- Rebuild your app: `npx react-native run-ios`
-- Ensure you ran `pod install` in `ios/`.
+- Ensure you are testing on a **real device**. Simulators often don't receive push tokens.
+- Ensure the app has Push Notification permission.
 
-**Activity doesn't appear on simulator?**
+**Update not showing?**
 
-- Live Activities often require a **real device** for push updates, though local activities _should_ work on Simulator (iOS 16.2+).
-- Ensure `NSSupportsLiveActivities` is in `Info.plist`.
+- Verify the `activityId` exists.
+- Ensure your Widget UI reads the correct fields from `context.state`.
 
-**"Invalid Activity Type" Error**
+---
 
-- Ensure your Widget Extension defines the **exact same** struct key names as the library uses (see Step 3 above).
+## 📜 License
+
+MIT

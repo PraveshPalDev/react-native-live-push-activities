@@ -66,11 +66,19 @@ public struct TimerAttributes: ActivityAttributes {
     public var icon: String?
 }
 
+// ✅ Generic Attributes for Custom Usage without modifying Native Code
+public struct GenericActivityAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        public var data: String // JSON string
+    }
+    public var fixedData: String // JSON string
+}
+
 @objc(LiveActivities)
 class LiveActivities: NSObject {
     
-    // Store active activities
-    private static var activeActivities: [String: Any?] = [:]
+    // Store active activities in memory (can be lost on restart)
+    private static var activeActivities: [String: Any] = [:]
     
     // MARK: - Check Status
     
@@ -100,8 +108,7 @@ class LiveActivities: NSObject {
         }
         
         do {
-            let activityId = UUID().uuidString
-            var activity: Any? = nil
+            var activityId: String? = nil
             
             // Helper to convert Double timestamp to Date
             func date(from time: Any?) -> Date {
@@ -109,8 +116,16 @@ class LiveActivities: NSObject {
                 return Date(timeIntervalSince1970: ms / 1000)
             }
             
+            // Helper to encode dict to JSON string
+            func json(_ dict: NSDictionary) -> String {
+                if let data = try? JSONSerialization.data(withJSONObject: dict, options: []) {
+                    return String(data: data, encoding: .utf8) ?? "{}"
+                }
+                return "{}"
+            }
+            
             switch activityType {
-            case "RideTracking":
+            case "RideTrackingAttributes", "RideTracking":
                 let attr = RideTrackingAttributes(
                     driverName: attributes["driverName"] as? String ?? "",
                     vehicleNumber: attributes["vehicleNumber"] as? String ?? "",
@@ -122,12 +137,14 @@ class LiveActivities: NSObject {
                 let state = RideTrackingAttributes.ContentState(
                     status: contentState["status"] as? String ?? "waiting",
                     currentLocation: contentState["currentLocation"] as? String,
-                    estimatedArrival: date(from: contentState["estimatedArrival"]),
+                    estimatedArrival: date(from: contentState["estimatedArrival"] ?? contentState["estimatedArrivalTimestamp"]),
                     distance: contentState["distance"] as? Double
                 )
-                activity = try Activity.request(attributes: attr, content: .init(state: state, staleDate: nil))
+                let activity = try Activity.request(attributes: attr, content: .init(state: state, staleDate: nil))
+                LiveActivities.activeActivities[activity.id] = activity
+                activityId = activity.id
                 
-            case "DeliveryTracking":
+            case "DeliveryTrackingAttributes", "DeliveryTracking":
                 let attr = DeliveryTrackingAttributes(
                     courierName: attributes["courierName"] as? String ?? "",
                     orderNumber: attributes["orderNumber"] as? String ?? "",
@@ -137,12 +154,14 @@ class LiveActivities: NSObject {
                 let state = DeliveryTrackingAttributes.ContentState(
                     status: contentState["status"] as? String ?? "preparing",
                     currentLocation: contentState["currentLocation"] as? String,
-                    estimatedArrival: date(from: contentState["estimatedArrival"]),
+                    estimatedArrival: date(from: contentState["estimatedArrival"] ?? contentState["estimatedArrivalTimestamp"]),
                     stopsRemaining: contentState["stopsRemaining"] as? Int
                 )
-                activity = try Activity.request(attributes: attr, content: .init(state: state, staleDate: nil))
+                let activity = try Activity.request(attributes: attr, content: .init(state: state, staleDate: nil))
+                LiveActivities.activeActivities[activity.id] = activity
+                activityId = activity.id
 
-            case "SportsScore":
+            case "SportsScoreAttributes", "SportsScore":
                 let attr = SportsScoreAttributes(
                     homeTeam: attributes["homeTeam"] as? String ?? "",
                     awayTeam: attributes["awayTeam"] as? String ?? "",
@@ -158,40 +177,45 @@ class LiveActivities: NSObject {
                     lastPlay: contentState["lastPlay"] as? String,
                     isLive: contentState["isLive"] as? Bool ?? true
                 )
-                activity = try Activity.request(attributes: attr, content: .init(state: state, staleDate: nil))
+                let activity = try Activity.request(attributes: attr, content: .init(state: state, staleDate: nil))
+                LiveActivities.activeActivities[activity.id] = activity
+                activityId = activity.id
 
-            case "Timer":
+            case "TimerAttributes", "Timer":
                 let attr = TimerAttributes(
                     title: attributes["title"] as? String ?? "",
                     description: attributes["description"] as? String,
                     icon: attributes["icon"] as? String
                 )
                 let state = TimerAttributes.ContentState(
-                    endTime: date(from: contentState["endTime"]),
+                    endTime: date(from: contentState["endTime"] ?? contentState["endTimeTimestamp"]),
                     isPaused: contentState["isPaused"] as? Bool ?? false,
                     remainingSeconds: contentState["remainingSeconds"] as? Double
                 )
-                activity = try Activity.request(attributes: attr, content: .init(state: state, staleDate: nil))
+                let activity = try Activity.request(attributes: attr, content: .init(state: state, staleDate: nil))
+                LiveActivities.activeActivities[activity.id] = activity
+                activityId = activity.id
+                
+            case "GenericActivityAttributes", "GenericActivity":
+                 let attr = GenericActivityAttributes(
+                    fixedData: json(attributes)
+                 )
+                 let state = GenericActivityAttributes.ContentState(
+                    data: json(contentState)
+                 )
+                 let activity = try Activity.request(attributes: attr, content: .init(state: state, staleDate: nil))
+                 LiveActivities.activeActivities[activity.id] = activity
+                 activityId = activity.id
                 
             default:
                 reject("E_INVALID_TYPE", "Unknown activity type: \(activityType)", nil)
                 return
             }
             
-            if let act = activity as? Activity<RideTrackingAttributes> {
-                LiveActivities.activeActivities[act.id] = act
-                resolve(act.id)
-            } else if let act = activity as? Activity<DeliveryTrackingAttributes> {
-                LiveActivities.activeActivities[act.id] = act
-                resolve(act.id)
-            } else if let act = activity as? Activity<SportsScoreAttributes> {
-                LiveActivities.activeActivities[act.id] = act
-                resolve(act.id)
-            } else if let act = activity as? Activity<TimerAttributes> {
-                LiveActivities.activeActivities[act.id] = act
-                resolve(act.id)
+            if let id = activityId {
+                resolve(id)
             } else {
-                reject("E_START_FAILED", "Failed to cast activity", nil)
+                reject("E_START_FAILED", "Activity ID was nil after start", nil)
             }
             
         } catch {
@@ -221,6 +245,13 @@ class LiveActivities: NSObject {
                 return Date(timeIntervalSince1970: ms / 1000)
             }
             
+            func json(_ dict: NSDictionary) -> String {
+                if let data = try? JSONSerialization.data(withJSONObject: dict, options: []) {
+                    return String(data: data, encoding: .utf8) ?? "{}"
+                }
+                return "{}"
+            }
+            
             // Construct Alert Configuration
             var alert: AlertConfiguration? = nil
             if let config = alertConfig {
@@ -231,28 +262,36 @@ class LiveActivities: NSObject {
                 )
             }
             
-            // Attempt to update based on stored type
-            if let activity = LiveActivities.activeActivities[activityId] as? Activity<RideTrackingAttributes> {
+            // Try to find activity across all known types (handles app restarts)
+            var found = false
+            
+            // RIDE TRACKING
+            if let activity = Activity<RideTrackingAttributes>.activities.first(where: { $0.id == activityId }) {
+                found = true
                 let state = RideTrackingAttributes.ContentState(
                     status: contentState["status"] as? String ?? activity.content.state.status,
                     currentLocation: contentState["currentLocation"] as? String ?? activity.content.state.currentLocation,
-                    estimatedArrival: date(from: contentState["estimatedArrival"] ?? activity.content.state.estimatedArrival.timeIntervalSince1970 * 1000),
+                    estimatedArrival: date(from: contentState["estimatedArrival"] ?? contentState["estimatedArrivalTimestamp"] ?? activity.content.state.estimatedArrival.timeIntervalSince1970 * 1000),
                     distance: contentState["distance"] as? Double ?? activity.content.state.distance
                 )
                 await activity.update(ActivityContent(state: state, staleDate: nil), alertConfiguration: alert)
-                resolve(nil)
             }
-            else if let activity = LiveActivities.activeActivities[activityId] as? Activity<DeliveryTrackingAttributes> {
+            
+            // DELIVERY TRACKING
+            if !found, let activity = Activity<DeliveryTrackingAttributes>.activities.first(where: { $0.id == activityId }) {
+                found = true
                 let state = DeliveryTrackingAttributes.ContentState(
                     status: contentState["status"] as? String ?? activity.content.state.status,
                     currentLocation: contentState["currentLocation"] as? String ?? activity.content.state.currentLocation,
-                    estimatedArrival: date(from: contentState["estimatedArrival"] ?? activity.content.state.estimatedArrival.timeIntervalSince1970 * 1000),
+                    estimatedArrival: date(from: contentState["estimatedArrival"] ?? contentState["estimatedArrivalTimestamp"] ?? activity.content.state.estimatedArrival.timeIntervalSince1970 * 1000),
                     stopsRemaining: contentState["stopsRemaining"] as? Int ?? activity.content.state.stopsRemaining
                 )
                 await activity.update(ActivityContent(state: state, staleDate: nil), alertConfiguration: alert)
-                resolve(nil)
             }
-            else if let activity = LiveActivities.activeActivities[activityId] as? Activity<SportsScoreAttributes> {
+            
+            // SPORTS SCORE
+            if !found, let activity = Activity<SportsScoreAttributes>.activities.first(where: { $0.id == activityId }) {
+                found = true
                 let state = SportsScoreAttributes.ContentState(
                     homeScore: contentState["homeScore"] as? Int ?? activity.content.state.homeScore,
                     awayScore: contentState["awayScore"] as? Int ?? activity.content.state.awayScore,
@@ -262,22 +301,32 @@ class LiveActivities: NSObject {
                     isLive: contentState["isLive"] as? Bool ?? activity.content.state.isLive
                 )
                 await activity.update(ActivityContent(state: state, staleDate: nil), alertConfiguration: alert)
-                resolve(nil)
             }
-            else if let activity = LiveActivities.activeActivities[activityId] as? Activity<TimerAttributes> {
+            
+            // TIMER
+            if !found, let activity = Activity<TimerAttributes>.activities.first(where: { $0.id == activityId }) {
+                found = true
                 let state = TimerAttributes.ContentState(
-                    endTime: date(from: contentState["endTime"] ?? activity.content.state.endTime.timeIntervalSince1970 * 1000),
+                    endTime: date(from: contentState["endTime"] ?? contentState["endTimeTimestamp"] ?? activity.content.state.endTime.timeIntervalSince1970 * 1000),
                     isPaused: contentState["isPaused"] as? Bool ?? activity.content.state.isPaused,
                     remainingSeconds: contentState["remainingSeconds"] as? Double ?? activity.content.state.remainingSeconds
                 )
                 await activity.update(ActivityContent(state: state, staleDate: nil), alertConfiguration: alert)
-                resolve(nil)
             }
-            else {
-                // Try to find by ID if not in memory (e.g. app restart)
-                // Note: This simple implementation relies on memory cache.
-                // For production, you'd iterate Activity<T>.activities
-                reject("E_NOT_FOUND", "Activity not found in current session", nil)
+            
+            // GENERIC
+            if !found, let activity = Activity<GenericActivityAttributes>.activities.first(where: { $0.id == activityId }) {
+                found = true
+                let state = GenericActivityAttributes.ContentState(
+                    data: json(contentState)
+                )
+                await activity.update(ActivityContent(state: state, staleDate: nil), alertConfiguration: alert)
+            }
+            
+            if found {
+                resolve(nil)
+            } else {
+                reject("E_NOT_FOUND", "Activity with ID \(activityId) not found", nil)
             }
         }
     }
@@ -297,30 +346,47 @@ class LiveActivities: NSObject {
         }
         
         Task {
-            func end<T: ActivityAttributes>(activity: Activity<T>?) async {
-                guard let activity = activity else { return }
-                await activity.end(nil, dismissalPolicy: .default)
+            var found = false
+            let policy: ActivityUIDismissalPolicy = (dismissalPolicy == "immediate") ? .immediate : .default
+            
+            // Try to end across all known types
+            if let activity = Activity<RideTrackingAttributes>.activities.first(where: { $0.id == activityId }) {
+                found = true; await activity.end(nil, dismissalPolicy: policy)
+            } else if let activity = Activity<DeliveryTrackingAttributes>.activities.first(where: { $0.id == activityId }) {
+                found = true; await activity.end(nil, dismissalPolicy: policy)
+            } else if let activity = Activity<SportsScoreAttributes>.activities.first(where: { $0.id == activityId }) {
+                found = true; await activity.end(nil, dismissalPolicy: policy)
+            } else if let activity = Activity<TimerAttributes>.activities.first(where: { $0.id == activityId }) {
+                found = true; await activity.end(nil, dismissalPolicy: policy)
+            } else if let activity = Activity<GenericActivityAttributes>.activities.first(where: { $0.id == activityId }) {
+                found = true; await activity.end(nil, dismissalPolicy: policy)
             }
             
-            if let activity = LiveActivities.activeActivities[activityId] as? Activity<RideTrackingAttributes> {
-                await end(activity: activity)
-            } else if let activity = LiveActivities.activeActivities[activityId] as? Activity<DeliveryTrackingAttributes> {
-                await end(activity: activity)
-            } else if let activity = LiveActivities.activeActivities[activityId] as? Activity<SportsScoreAttributes> {
-                await end(activity: activity)
-            } else if let activity = LiveActivities.activeActivities[activityId] as? Activity<TimerAttributes> {
-                await end(activity: activity)
+            if found {
+                LiveActivities.activeActivities.removeValue(forKey: activityId)
+                resolve(nil)
+            } else {
+                resolve(nil) 
             }
-            
-            LiveActivities.activeActivities.removeValue(forKey: activityId)
-            resolve(nil)
         }
     }
     
     @objc
     func getActiveActivities(_ resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
-        // Return keys from our memory cache
-        resolve(Array(LiveActivities.activeActivities.keys))
+        guard #available(iOS 16.1, *) else {
+            resolve([])
+            return
+        }
+        
+        // Combine all activity IDs from system (robust check)
+        var allIds: [String] = []
+        allIds.append(contentsOf: Activity<RideTrackingAttributes>.activities.map { $0.id })
+        allIds.append(contentsOf: Activity<DeliveryTrackingAttributes>.activities.map { $0.id })
+        allIds.append(contentsOf: Activity<SportsScoreAttributes>.activities.map { $0.id })
+        allIds.append(contentsOf: Activity<TimerAttributes>.activities.map { $0.id })
+         allIds.append(contentsOf: Activity<GenericActivityAttributes>.activities.map { $0.id })
+        
+        resolve(allIds)
     }
     
     @objc
@@ -332,6 +398,7 @@ class LiveActivities: NSObject {
             for activity in Activity<DeliveryTrackingAttributes>.activities { await activity.end(nil, dismissalPolicy: .immediate) }
             for activity in Activity<SportsScoreAttributes>.activities { await activity.end(nil, dismissalPolicy: .immediate) }
             for activity in Activity<TimerAttributes>.activities { await activity.end(nil, dismissalPolicy: .immediate) }
+             for activity in Activity<GenericActivityAttributes>.activities { await activity.end(nil, dismissalPolicy: .immediate) }
             
             LiveActivities.activeActivities.removeAll()
             resolve(nil)
@@ -339,25 +406,38 @@ class LiveActivities: NSObject {
     }
     
     @objc
-    func getPushToken(_ activityId: String, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+    func getPushToken(_ activityId: String, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
         guard #available(iOS 16.1, *) else { resolve(nil); return }
         
-        // Helper to get token
-        func getToken<T: ActivityAttributes>(activity: Activity<T>?) {
-            guard let activity = activity else { resolve(nil); return }
-            Task {
-                for await data in activity.pushTokenUpdates {
+        Task {
+            var tokenFound = ""
+            
+            func extractToken<T: ActivityAttributes>(activity: Activity<T>) async -> String? {
+                 for await data in activity.pushTokenUpdates {
                     let token = data.map { String(format: "%02x", $0) }.joined()
-                    resolve(token)
-                    return
-                }
+                    return token
+                 }
+                 return nil
+            }
+
+            // Find activity and get token
+            if let activity = Activity<RideTrackingAttributes>.activities.first(where: { $0.id == activityId }) {
+               if let t = await extractToken(activity: activity) { tokenFound = t }
+            } else if let activity = Activity<DeliveryTrackingAttributes>.activities.first(where: { $0.id == activityId }) {
+               if let t = await extractToken(activity: activity) { tokenFound = t }
+            } else if let activity = Activity<SportsScoreAttributes>.activities.first(where: { $0.id == activityId }) {
+               if let t = await extractToken(activity: activity) { tokenFound = t }
+            } else if let activity = Activity<TimerAttributes>.activities.first(where: { $0.id == activityId }) {
+               if let t = await extractToken(activity: activity) { tokenFound = t }
+            } else if let activity = Activity<GenericActivityAttributes>.activities.first(where: { $0.id == activityId }) {
+               if let t = await extractToken(activity: activity) { tokenFound = t }
+            }
+            
+            if !tokenFound.isEmpty {
+                resolve(tokenFound)
+            } else {
+                resolve(nil)
             }
         }
-
-        if let activity = LiveActivities.activeActivities[activityId] as? Activity<RideTrackingAttributes> { getToken(activity: activity) }
-        else if let activity = LiveActivities.activeActivities[activityId] as? Activity<DeliveryTrackingAttributes> { getToken(activity: activity) }
-        else if let activity = LiveActivities.activeActivities[activityId] as? Activity<SportsScoreAttributes> { getToken(activity: activity) }
-        else if let activity = LiveActivities.activeActivities[activityId] as? Activity<TimerAttributes> { getToken(activity: activity) }
-        else { resolve(nil) }
     }
 }

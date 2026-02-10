@@ -1,5 +1,5 @@
 {
-  "name": "react-native-live-activities",
+  "name": "react-native-live-push-activities",
   "version": "1.0.0",
   "description": "Easy-to-use iOS Live Activities implementation for React Native CLI and Expo with real-time push notifications",
   "main": "lib/commonjs/index.js",

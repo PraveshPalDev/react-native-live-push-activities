@@ -1,0 +1,13 @@
+{
+  "extends": "@tsconfig/react-native/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "react-native-live-activities": ["../src/index"]
+    }
+  },
+  "include": [
+    ".",
+    "../src"
+  ]
+}

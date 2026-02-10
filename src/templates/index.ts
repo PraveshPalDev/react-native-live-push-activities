@@ -1,4 +1,4 @@
-import { LiveActivities, ActivityConfig } from '../index';
+import { LiveActivities } from '../index';
 
 /**
  * Ride Tracking Template

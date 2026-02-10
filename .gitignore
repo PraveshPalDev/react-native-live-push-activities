@@ -1,0 +1,40 @@
+node_modules/
+lib/
+*.log
+*.tgz
+
+# iOS
+ios/build/
+ios/Pods/
+ios/.xcode.env.local
+*.xcuserstate
+*.xcworkspace/xcuserdata
+
+# Android
+android/build/
+android/app/build/
+android/.gradle/
+
+# Example
+example/node_modules/
+example/ios/Pods/
+example/ios/build/
+example/android/build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# Testing
+coverage/
+.nyc_output/
+
+# Expo
+.expo/
+dist/

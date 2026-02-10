@@ -217,6 +217,21 @@ if (Platform.OS === 'ios') {
 
 ---
 
+## 🤝 Contributing
+
+We welcome contributions! Please follow these steps to contribute:
+
+1.  **Check for existing issues** or open a new one.
+2.  **Fork the repository** and create your branch from `main`.
+3.  **Link your Pull Request** to an issue (e.g., `Closes #1`).
+4.  **Wait for review** from the maintainers.
+
+Please read our [Contributing Guide](.github/CONTRIBUTING.md) for more details.
+
+**Note**: Pull Requests without a linked issue will not be reviewed.
+
+---
+
 ## ❓ Troubleshooting
 
 **Token is nil?**

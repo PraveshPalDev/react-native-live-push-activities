@@ -234,6 +234,41 @@ Please read our [Contributing Guide](.github/CONTRIBUTING.md) for more details.
 
 ## ❓ Troubleshooting
 
+### CocoaPods Installation Issues
+
+**Error: "required a higher minimum deployment target"**
+
+If you see this error when running `pod install`:
+
+```
+[!] CocoaPods could not find compatible versions for pod "react-native-live-push-activities":
+Specs satisfying the dependency were found, but they required a higher minimum deployment target.
+```
+
+**Solution**: Update your iOS deployment target in your `Podfile`:
+
+1. Open `ios/Podfile`
+2. Find the line with `platform :ios` (usually near the top)
+3. Update it to iOS 13.0 or higher:
+   ```ruby
+   platform :ios, '13.0'
+   ```
+4. Also ensure your project's deployment target matches. In `ios/Podfile`, add this at the bottom:
+   ```ruby
+   post_install do |installer|
+     installer.pods_project.targets.each do |target|
+       target.build_configurations.each do |config|
+         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+       end
+     end
+   end
+   ```
+5. Run `pod install` again
+
+**Note**: While the package installs on iOS 13.0+, **Live Activities features only work on iOS 16.1+**. The library gracefully handles this with runtime checks.
+
+### Other Common Issues
+
 **Token is nil?**
 
 - Ensure you are testing on a **real device**. Simulators often don't receive push tokens.

@@ -34,7 +34,10 @@
     "widget",
     "expo"
   ],
-  "repository": "https://github.com/PraveshPalDev/react-native-live-push-activities",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PraveshPalDev/react-native-live-push-activities.git"
+  },
   "author": "PraveshPalDev <praveshkumar@example.com>",
   "license": "MIT",
   "bugs": {

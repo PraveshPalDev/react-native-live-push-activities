@@ -12,7 +12,7 @@
     "lib",
     "ios",
     "android",
-    "react-native-live-activities.podspec"
+    "react-native-live-push-activities.podspec"
   ],
   "scripts": {
     "test": "jest",
@@ -34,13 +34,13 @@
     "widget",
     "expo"
   ],
-  "repository": "https://github.com/yourusername/react-native-live-activities",
-  "author": "Your Name <your.email@example.com>",
+  "repository": "https://github.com/PraveshPalDev/react-native-live-push-activities",
+  "author": "PraveshPalDev <praveshkumar@example.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/yourusername/react-native-live-activities/issues"
+    "url": "https://github.com/PraveshPalDev/react-native-live-push-activities/issues"
   },
-  "homepage": "https://github.com/yourusername/react-native-live-activities#readme",
+  "homepage": "https://github.com/PraveshPalDev/react-native-live-push-activities#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },

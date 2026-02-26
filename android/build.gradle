@@ -21,6 +21,20 @@ android {
     minSdkVersion 21
     targetSdkVersion 33
   }
+  
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
+  
+  kotlinOptions {
+    jvmTarget = "1.8"
+  }
+  
+  packagingOptions {
+    pickFirst '**/libc++_shared.so'
+    pickFirst '**/libfbjni.so'
+  }
 }
 
 repositories {
@@ -31,6 +45,9 @@ repositories {
 dependencies {
   implementation "com.facebook.react:react-native:+"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:1.7.0"
+  
+  // AndroidX Core
+  implementation "androidx.core:core-ktx:1.9.0"
   
   // Kotlinx Coroutines
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4"

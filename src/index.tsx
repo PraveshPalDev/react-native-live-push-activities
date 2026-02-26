@@ -102,4 +102,6 @@ export class LiveActivities {
 }
 
 export * from './templates';
+export * from './types';
+export { PushNotificationHelper, PushServerHelper } from './push/PushNotificationHelper';
 export default LiveActivities;

@@ -1,5 +1,34 @@
 import { LiveActivities } from '../index';
 
+// Re-export types
+export type {
+  QuickCommerceAttributes,
+  QuickCommerceState,
+  QuickCommerceStatus,
+  FoodDeliveryAttributes,
+  FoodDeliveryState,
+  FoodDeliveryStatus,
+  FoodDeliveryStage,
+  EcommerceDeliveryAttributes,
+  EcommerceDeliveryState,
+  EcommerceDeliveryStatus,
+  EcommerceDeliveryStage,
+  GenericDeliveryAttributes,
+  GenericDeliveryState,
+  AlertConfig,
+  ActivityConfig,
+  UpdateConfig,
+  EndConfig,
+  IOSPushPayload,
+  AndroidPushPayload,
+} from '../types';
+
+// Import new template classes
+import { QuickCommerceDelivery } from './QuickCommerce';
+import { FoodDelivery } from './FoodDelivery';
+import { EcommerceDelivery } from './EcommerceDelivery';
+import { CustomDelivery, createCustomDelivery } from './CustomDelivery';
+
 /**
  * Ride Tracking Template
  */
@@ -203,8 +232,23 @@ export class Timer {
  * Export all templates
  */
 export const Templates = {
+  // Existing templates
   RideTracking,
   DeliveryTracking,
   SportsScore,
   Timer,
+  // New delivery templates
+  QuickCommerceDelivery,
+  FoodDelivery,
+  EcommerceDelivery,
+  CustomDelivery,
+};
+
+// Export individual templates for direct import
+export {
+  QuickCommerceDelivery,
+  FoodDelivery,
+  EcommerceDelivery,
+  CustomDelivery,
+  createCustomDelivery,
 };

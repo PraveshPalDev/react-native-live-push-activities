@@ -74,6 +74,98 @@ public struct GenericActivityAttributes: ActivityAttributes {
     public var fixedData: String // JSON string
 }
 
+// MARK: - Quick Commerce Attributes (Zepto-style)
+
+public struct QuickCommerceAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        public var status: String
+        public var progress: Double // 0-100
+        public var estimatedMinutes: Int
+        public var riderName: String?
+        public var riderPhone: String?
+        public var riderPhoto: String?
+        public var currentLocation: String?
+        public var storeName: String?
+        public var storeLogo: String?
+    }
+    
+    public var orderId: String
+    public var items: String?
+    public var appIcon: String?
+    public var deepLink: String?
+}
+
+// MARK: - Food Delivery Attributes (Swiggy/Zomato-style)
+
+public struct FoodDeliveryAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        public var status: String
+        public var statusStage: Int // 0: Confirmed, 1: Preparing, 2: Picked Up, 3: On the Way, 4: Delivered
+        public var estimatedMinutes: Int
+        public var riderName: String?
+        public var riderPhone: String?
+        public var riderPhoto: String?
+        public var currentLocation: String?
+        public var preparationTime: Int?
+        public var distanceRemaining: Double?
+    }
+    
+    public var orderId: String
+    public var restaurantName: String
+    public var restaurantLogo: String?
+    public var orderItems: String?
+    public var deliveryAddress: String?
+    public var appIcon: String?
+    public var deepLink: String?
+}
+
+// MARK: - E-commerce Delivery Attributes (Flipkart/Amazon-style)
+
+public struct EcommerceDeliveryAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        public var status: String
+        public var statusStage: Int // 0: Ordered, 1: Shipped, 2: In Transit, 3: Out for Delivery, 4: Delivered
+        public var estimatedDeliveryDate: Date?
+        public var courierPartner: String?
+        public var trackingNumber: String?
+        public var currentHub: String?
+        public var deliveryAttempts: Int?
+        public var rescheduleAvailable: Bool?
+    }
+    
+    public var orderId: String
+    public var productName: String
+    public var productImage: String?
+    public var productDescription: String?
+    public var courierPartner: String?
+    public var trackingUrl: String?
+    public var appIcon: String?
+    public var deepLink: String?
+}
+
+// MARK: - Generic Delivery Attributes (Fully Customizable)
+
+public struct GenericDeliveryAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        public var title: String
+        public var subtitle: String?
+        public var status: String
+        public var progress: Double?
+        public var primaryImage: String?
+        public var secondaryImage: String?
+        public var actionLabel: String?
+        public var actionDeepLink: String?
+        public var secondaryActionLabel: String?
+        public var secondaryActionDeepLink: String?
+        public var customData: String? // JSON string for additional data
+    }
+    
+    public var id: String
+    public var type: String // 'delivery', 'service', 'booking', etc.
+    public var appIcon: String?
+    public var deepLink: String?
+}
+
 @objc(LiveActivities)
 class LiveActivities: NSObject {
     
@@ -206,6 +298,106 @@ class LiveActivities: NSObject {
                  let activity = try Activity.request(attributes: attr, content: .init(state: state, staleDate: nil))
                  LiveActivities.activeActivities[activity.id] = activity
                  activityId = activity.id
+            
+            // MARK: Quick Commerce (Zepto-style)
+            case "QuickCommerceAttributes", "QuickCommerce":
+                let attr = QuickCommerceAttributes(
+                    orderId: attributes["orderId"] as? String ?? "",
+                    items: attributes["items"] as? String,
+                    appIcon: attributes["appIcon"] as? String,
+                    deepLink: attributes["deepLink"] as? String
+                )
+                let state = QuickCommerceAttributes.ContentState(
+                    status: contentState["status"] as? String ?? "confirmed",
+                    progress: contentState["progress"] as? Double ?? 0.0,
+                    estimatedMinutes: contentState["estimatedMinutes"] as? Int ?? 10,
+                    riderName: contentState["riderName"] as? String,
+                    riderPhone: contentState["riderPhone"] as? String,
+                    riderPhoto: contentState["riderPhoto"] as? String,
+                    currentLocation: contentState["currentLocation"] as? String,
+                    storeName: contentState["storeName"] as? String,
+                    storeLogo: contentState["storeLogo"] as? String
+                )
+                let qcActivity = try Activity.request(attributes: attr, content: .init(state: state, staleDate: nil))
+                LiveActivities.activeActivities[qcActivity.id] = qcActivity
+                activityId = qcActivity.id
+            
+            // MARK: Food Delivery (Swiggy/Zomato-style)
+            case "FoodDeliveryAttributes", "FoodDelivery":
+                let attr = FoodDeliveryAttributes(
+                    orderId: attributes["orderId"] as? String ?? "",
+                    restaurantName: attributes["restaurantName"] as? String ?? "",
+                    restaurantLogo: attributes["restaurantLogo"] as? String,
+                    orderItems: attributes["orderItems"] as? String,
+                    deliveryAddress: attributes["deliveryAddress"] as? String,
+                    appIcon: attributes["appIcon"] as? String,
+                    deepLink: attributes["deepLink"] as? String
+                )
+                let state = FoodDeliveryAttributes.ContentState(
+                    status: contentState["status"] as? String ?? "confirmed",
+                    statusStage: contentState["statusStage"] as? Int ?? 0,
+                    estimatedMinutes: contentState["estimatedMinutes"] as? Int ?? 30,
+                    riderName: contentState["riderName"] as? String,
+                    riderPhone: contentState["riderPhone"] as? String,
+                    riderPhoto: contentState["riderPhoto"] as? String,
+                    currentLocation: contentState["currentLocation"] as? String,
+                    preparationTime: contentState["preparationTime"] as? Int,
+                    distanceRemaining: contentState["distanceRemaining"] as? Double
+                )
+                let fdActivity = try Activity.request(attributes: attr, content: .init(state: state, staleDate: nil))
+                LiveActivities.activeActivities[fdActivity.id] = fdActivity
+                activityId = fdActivity.id
+            
+            // MARK: E-commerce Delivery (Flipkart/Amazon-style)
+            case "EcommerceDeliveryAttributes", "EcommerceDelivery":
+                let attr = EcommerceDeliveryAttributes(
+                    orderId: attributes["orderId"] as? String ?? "",
+                    productName: attributes["productName"] as? String ?? "",
+                    productImage: attributes["productImage"] as? String,
+                    productDescription: attributes["productDescription"] as? String,
+                    courierPartner: attributes["courierPartner"] as? String,
+                    trackingUrl: attributes["trackingUrl"] as? String,
+                    appIcon: attributes["appIcon"] as? String,
+                    deepLink: attributes["deepLink"] as? String
+                )
+                let state = EcommerceDeliveryAttributes.ContentState(
+                    status: contentState["status"] as? String ?? "ordered",
+                    statusStage: contentState["statusStage"] as? Int ?? 0,
+                    estimatedDeliveryDate: contentState["estimatedDeliveryDate"] != nil ? date(from: contentState["estimatedDeliveryDate"]) : nil,
+                    courierPartner: contentState["courierPartner"] as? String,
+                    trackingNumber: contentState["trackingNumber"] as? String,
+                    currentHub: contentState["currentHub"] as? String,
+                    deliveryAttempts: contentState["deliveryAttempts"] as? Int,
+                    rescheduleAvailable: contentState["rescheduleAvailable"] as? Bool
+                )
+                let ecActivity = try Activity.request(attributes: attr, content: .init(state: state, staleDate: nil))
+                LiveActivities.activeActivities[ecActivity.id] = ecActivity
+                activityId = ecActivity.id
+            
+            // MARK: Generic Delivery (Fully Customizable)
+            case "GenericDeliveryAttributes", "GenericDelivery":
+                let attr = GenericDeliveryAttributes(
+                    id: attributes["id"] as? String ?? UUID().uuidString,
+                    type: attributes["type"] as? String ?? "delivery",
+                    appIcon: attributes["appIcon"] as? String,
+                    deepLink: attributes["deepLink"] as? String
+                )
+                let state = GenericDeliveryAttributes.ContentState(
+                    title: contentState["title"] as? String ?? "",
+                    subtitle: contentState["subtitle"] as? String,
+                    status: contentState["status"] as? String ?? "pending",
+                    progress: contentState["progress"] as? Double,
+                    primaryImage: contentState["primaryImage"] as? String,
+                    secondaryImage: contentState["secondaryImage"] as? String,
+                    actionLabel: contentState["actionLabel"] as? String,
+                    actionDeepLink: contentState["actionDeepLink"] as? String,
+                    secondaryActionLabel: contentState["secondaryActionLabel"] as? String,
+                    secondaryActionDeepLink: contentState["secondaryActionDeepLink"] as? String,
+                    customData: contentState["customData"] as? String
+                )
+                let gdActivity = try Activity.request(attributes: attr, content: .init(state: state, staleDate: nil))
+                LiveActivities.activeActivities[gdActivity.id] = gdActivity
+                activityId = gdActivity.id
                 
             default:
                 reject("E_INVALID_TYPE", "Unknown activity type: \(activityType)", nil)
@@ -323,6 +515,79 @@ class LiveActivities: NSObject {
                 await activity.update(ActivityContent(state: state, staleDate: nil), alertConfiguration: alert)
             }
             
+            // QUICK COMMERCE
+            if !found, let activity = Activity<QuickCommerceAttributes>.activities.first(where: { $0.id == activityId }) {
+                found = true
+                let currentState = activity.content.state
+                let state = QuickCommerceAttributes.ContentState(
+                    status: contentState["status"] as? String ?? currentState.status,
+                    progress: contentState["progress"] as? Double ?? currentState.progress,
+                    estimatedMinutes: contentState["estimatedMinutes"] as? Int ?? currentState.estimatedMinutes,
+                    riderName: contentState["riderName"] as? String ?? currentState.riderName,
+                    riderPhone: contentState["riderPhone"] as? String ?? currentState.riderPhone,
+                    riderPhoto: contentState["riderPhoto"] as? String ?? currentState.riderPhoto,
+                    currentLocation: contentState["currentLocation"] as? String ?? currentState.currentLocation,
+                    storeName: contentState["storeName"] as? String ?? currentState.storeName,
+                    storeLogo: contentState["storeLogo"] as? String ?? currentState.storeLogo
+                )
+                await activity.update(ActivityContent(state: state, staleDate: nil), alertConfiguration: alert)
+            }
+            
+            // FOOD DELIVERY
+            if !found, let activity = Activity<FoodDeliveryAttributes>.activities.first(where: { $0.id == activityId }) {
+                found = true
+                let currentState = activity.content.state
+                let state = FoodDeliveryAttributes.ContentState(
+                    status: contentState["status"] as? String ?? currentState.status,
+                    statusStage: contentState["statusStage"] as? Int ?? currentState.statusStage,
+                    estimatedMinutes: contentState["estimatedMinutes"] as? Int ?? currentState.estimatedMinutes,
+                    riderName: contentState["riderName"] as? String ?? currentState.riderName,
+                    riderPhone: contentState["riderPhone"] as? String ?? currentState.riderPhone,
+                    riderPhoto: contentState["riderPhoto"] as? String ?? currentState.riderPhoto,
+                    currentLocation: contentState["currentLocation"] as? String ?? currentState.currentLocation,
+                    preparationTime: contentState["preparationTime"] as? Int ?? currentState.preparationTime,
+                    distanceRemaining: contentState["distanceRemaining"] as? Double ?? currentState.distanceRemaining
+                )
+                await activity.update(ActivityContent(state: state, staleDate: nil), alertConfiguration: alert)
+            }
+            
+            // E-COMMERCE DELIVERY
+            if !found, let activity = Activity<EcommerceDeliveryAttributes>.activities.first(where: { $0.id == activityId }) {
+                found = true
+                let currentState = activity.content.state
+                let state = EcommerceDeliveryAttributes.ContentState(
+                    status: contentState["status"] as? String ?? currentState.status,
+                    statusStage: contentState["statusStage"] as? Int ?? currentState.statusStage,
+                    estimatedDeliveryDate: contentState["estimatedDeliveryDate"] != nil ? date(from: contentState["estimatedDeliveryDate"]) : currentState.estimatedDeliveryDate,
+                    courierPartner: contentState["courierPartner"] as? String ?? currentState.courierPartner,
+                    trackingNumber: contentState["trackingNumber"] as? String ?? currentState.trackingNumber,
+                    currentHub: contentState["currentHub"] as? String ?? currentState.currentHub,
+                    deliveryAttempts: contentState["deliveryAttempts"] as? Int ?? currentState.deliveryAttempts,
+                    rescheduleAvailable: contentState["rescheduleAvailable"] as? Bool ?? currentState.rescheduleAvailable
+                )
+                await activity.update(ActivityContent(state: state, staleDate: nil), alertConfiguration: alert)
+            }
+            
+            // GENERIC DELIVERY
+            if !found, let activity = Activity<GenericDeliveryAttributes>.activities.first(where: { $0.id == activityId }) {
+                found = true
+                let currentState = activity.content.state
+                let state = GenericDeliveryAttributes.ContentState(
+                    title: contentState["title"] as? String ?? currentState.title,
+                    subtitle: contentState["subtitle"] as? String ?? currentState.subtitle,
+                    status: contentState["status"] as? String ?? currentState.status,
+                    progress: contentState["progress"] as? Double ?? currentState.progress,
+                    primaryImage: contentState["primaryImage"] as? String ?? currentState.primaryImage,
+                    secondaryImage: contentState["secondaryImage"] as? String ?? currentState.secondaryImage,
+                    actionLabel: contentState["actionLabel"] as? String ?? currentState.actionLabel,
+                    actionDeepLink: contentState["actionDeepLink"] as? String ?? currentState.actionDeepLink,
+                    secondaryActionLabel: contentState["secondaryActionLabel"] as? String ?? currentState.secondaryActionLabel,
+                    secondaryActionDeepLink: contentState["secondaryActionDeepLink"] as? String ?? currentState.secondaryActionDeepLink,
+                    customData: contentState["customData"] as? String ?? currentState.customData
+                )
+                await activity.update(ActivityContent(state: state, staleDate: nil), alertConfiguration: alert)
+            }
+            
             if found {
                 resolve(nil)
             } else {
@@ -360,6 +625,14 @@ class LiveActivities: NSObject {
                 found = true; await activity.end(nil, dismissalPolicy: policy)
             } else if let activity = Activity<GenericActivityAttributes>.activities.first(where: { $0.id == activityId }) {
                 found = true; await activity.end(nil, dismissalPolicy: policy)
+            } else if let activity = Activity<QuickCommerceAttributes>.activities.first(where: { $0.id == activityId }) {
+                found = true; await activity.end(nil, dismissalPolicy: policy)
+            } else if let activity = Activity<FoodDeliveryAttributes>.activities.first(where: { $0.id == activityId }) {
+                found = true; await activity.end(nil, dismissalPolicy: policy)
+            } else if let activity = Activity<EcommerceDeliveryAttributes>.activities.first(where: { $0.id == activityId }) {
+                found = true; await activity.end(nil, dismissalPolicy: policy)
+            } else if let activity = Activity<GenericDeliveryAttributes>.activities.first(where: { $0.id == activityId }) {
+                found = true; await activity.end(nil, dismissalPolicy: policy)
             }
             
             if found {
@@ -384,7 +657,11 @@ class LiveActivities: NSObject {
         allIds.append(contentsOf: Activity<DeliveryTrackingAttributes>.activities.map { $0.id })
         allIds.append(contentsOf: Activity<SportsScoreAttributes>.activities.map { $0.id })
         allIds.append(contentsOf: Activity<TimerAttributes>.activities.map { $0.id })
-         allIds.append(contentsOf: Activity<GenericActivityAttributes>.activities.map { $0.id })
+        allIds.append(contentsOf: Activity<GenericActivityAttributes>.activities.map { $0.id })
+        allIds.append(contentsOf: Activity<QuickCommerceAttributes>.activities.map { $0.id })
+        allIds.append(contentsOf: Activity<FoodDeliveryAttributes>.activities.map { $0.id })
+        allIds.append(contentsOf: Activity<EcommerceDeliveryAttributes>.activities.map { $0.id })
+        allIds.append(contentsOf: Activity<GenericDeliveryAttributes>.activities.map { $0.id })
         
         resolve(allIds)
     }
@@ -398,7 +675,11 @@ class LiveActivities: NSObject {
             for activity in Activity<DeliveryTrackingAttributes>.activities { await activity.end(nil, dismissalPolicy: .immediate) }
             for activity in Activity<SportsScoreAttributes>.activities { await activity.end(nil, dismissalPolicy: .immediate) }
             for activity in Activity<TimerAttributes>.activities { await activity.end(nil, dismissalPolicy: .immediate) }
-             for activity in Activity<GenericActivityAttributes>.activities { await activity.end(nil, dismissalPolicy: .immediate) }
+            for activity in Activity<GenericActivityAttributes>.activities { await activity.end(nil, dismissalPolicy: .immediate) }
+            for activity in Activity<QuickCommerceAttributes>.activities { await activity.end(nil, dismissalPolicy: .immediate) }
+            for activity in Activity<FoodDeliveryAttributes>.activities { await activity.end(nil, dismissalPolicy: .immediate) }
+            for activity in Activity<EcommerceDeliveryAttributes>.activities { await activity.end(nil, dismissalPolicy: .immediate) }
+            for activity in Activity<GenericDeliveryAttributes>.activities { await activity.end(nil, dismissalPolicy: .immediate) }
             
             LiveActivities.activeActivities.removeAll()
             resolve(nil)
@@ -430,6 +711,14 @@ class LiveActivities: NSObject {
             } else if let activity = Activity<TimerAttributes>.activities.first(where: { $0.id == activityId }) {
                if let t = await extractToken(activity: activity) { tokenFound = t }
             } else if let activity = Activity<GenericActivityAttributes>.activities.first(where: { $0.id == activityId }) {
+               if let t = await extractToken(activity: activity) { tokenFound = t }
+            } else if let activity = Activity<QuickCommerceAttributes>.activities.first(where: { $0.id == activityId }) {
+               if let t = await extractToken(activity: activity) { tokenFound = t }
+            } else if let activity = Activity<FoodDeliveryAttributes>.activities.first(where: { $0.id == activityId }) {
+               if let t = await extractToken(activity: activity) { tokenFound = t }
+            } else if let activity = Activity<EcommerceDeliveryAttributes>.activities.first(where: { $0.id == activityId }) {
+               if let t = await extractToken(activity: activity) { tokenFound = t }
+            } else if let activity = Activity<GenericDeliveryAttributes>.activities.first(where: { $0.id == activityId }) {
                if let t = await extractToken(activity: activity) { tokenFound = t }
             }
             

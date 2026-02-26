@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- E-commerce Delivery Notification Layout (Flipkart/Amazon-style) -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="12dp"
+    android:background="@android:color/white">
+    
+    <!-- Header with Product -->
+    <LinearLayout
+        android:id="@+id/headerLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        
+        <ImageView
+            android:id="@+id/ivProductImage"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@android:drawable/ic_menu_gallery"
+            android:scaleType="centerCrop"
+            android:background="#F5F5F5"/>
+        
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:orientation="vertical">
+            
+            <TextView
+                android:id="@+id/tvProductName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="iPhone 15 Pro Max"
+                android:textStyle="bold"
+                android:textSize="13sp"
+                android:textColor="#333333"
+                android:maxLines="2"
+                android:ellipsize="end"/>
+            
+            <TextView
+                android:id="@+id/tvOrderId"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="EC-12345"
+                android:textSize="11sp"
+                android:textColor="#999999"/>
+        </LinearLayout>
+        
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="end">
+            
+            <TextView
+                android:id="@+id/tvEstimatedDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="By Dec 25"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:textColor="#2196F3"/>
+        </LinearLayout>
+    </LinearLayout>
+    
+    <!-- Status -->
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/headerLayout"
+        android:layout_marginTop="6dp"
+        android:text="In Transit"
+        android:textSize="13sp"
+        android:textStyle="medium"
+        android:textColor="#2196F3"/>
+    
+    <!-- Timeline Progress -->
+    <LinearLayout
+        android:id="@+id/timelineLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvStatus"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        
+        <View
+            android:id="@+id/ecomStage0"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:background="@android:color/holo_blue_dark"/>
+        
+        <View
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:layout_weight="1"
+            android:background="#2196F3"/>
+        
+        <View
+            android:id="@+id/ecomStage1"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:background="@android:color/holo_blue_dark"/>
+        
+        <View
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:layout_weight="1"
+            android:background="#2196F3"/>
+        
+        <View
+            android:id="@+id/ecomStage2"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:background="@android:color/holo_blue_dark"/>
+        
+        <View
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:layout_weight="1"
+            android:background="#CCCCCC"/>
+        
+        <View
+            android:id="@+id/ecomStage3"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:background="#CCCCCC"/>
+        
+        <View
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:layout_weight="1"
+            android:background="#CCCCCC"/>
+        
+        <View
+            android:id="@+id/ecomStage4"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:background="#CCCCCC"/>
+    </LinearLayout>
+    
+    <!-- Stage Labels -->
+    <LinearLayout
+        android:id="@+id/stageLabelsLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/timelineLayout"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal">
+        
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Ordered"
+            android:textSize="9sp"
+            android:textColor="#999999"
+            android:gravity="center"/>
+        
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Shipped"
+            android:textSize="9sp"
+            android:textColor="#999999"
+            android:gravity="center"/>
+        
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Transit"
+            android:textSize="9sp"
+            android:textColor="#999999"
+            android:gravity="center"/>
+        
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Out"
+            android:textSize="9sp"
+            android:textColor="#999999"
+            android:gravity="center"/>
+        
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Done"
+            android:textSize="9sp"
+            android:textColor="#999999"
+            android:gravity="center"/>
+    </LinearLayout>
+    
+    <!-- Courier Info -->
+    <LinearLayout
+        android:id="@+id/courierLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/stageLabelsLayout"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@android:drawable/ic_menu_send"
+            android:tint="#2196F3"/>
+        
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:orientation="vertical">
+            
+            <TextView
+                android:id="@+id/tvCourier"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="BlueDart"
+                android:textSize="12sp"
+                android:textStyle="medium"
+                android:textColor="#333333"/>
+            
+            <TextView
+                android:id="@+id/tvTrackingNumber"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="AWB: BD123456789"
+                android:textSize="10sp"
+                android:textColor="#999999"/>
+        </LinearLayout>
+        
+        <TextView
+            android:id="@+id/btnTrack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Track"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#2196F3"
+            android:padding="8dp"/>
+    </LinearLayout>
+    
+    <!-- Current Hub -->
+    <TextView
+        android:id="@+id/tvCurrentHub"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/courierLayout"
+        android:layout_marginTop="4dp"
+        android:drawableStart="@android:drawable/ic_menu_mylocation"
+        android:drawablePadding="4dp"
+        android:text="At: Mumbai Distribution Center"
+        android:textSize="11sp"
+        android:textColor="#666666"/>
+    
+</RelativeLayout>

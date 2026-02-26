@@ -1,132 +1,408 @@
-# 🚀 React Native Push & Live Activities (Cross-Platform)
+# React Native Live Push Activities
 
-<div align="center">
-  <h3>
-    The ultimate library for iOS Dynamic Island, Lock Screen Activities & Android Compatibility
-  </h3>
-  <p>
-    Seamlessly integrate iOS Live Activities with React Native. <br/>
-    Includes complete <b>no-crash</b> support for Android & Expo (Development Builds).
-  </p>
-</div>
+A cross-platform library for iOS Live Activities (Dynamic Island & Lock Screen) with Android notification support.
 
----
+## Features
 
-## 🔥 Features
+- **iOS 16.1+ Live Activities** - Dynamic Island and Lock Screen widgets
+- **Push Notification Updates** - Update activities remotely via APNs/FCM
+- **Pre-built Templates** - Quick Commerce, Food Delivery, E-commerce, and more
+- **Custom Activities** - Send any JSON data structure
+- **Android Support** - Foreground service notifications with live updates
+- **TypeScript First** - Fully typed API
+- **Expo Compatible** - Works with Expo Development Builds
 
-- **iOS 16+ Support**: Full Dynamic Island & Lock Screen Live Activities.
-- **Push Notification Support**: Get push tokens to update activities remotely.
-- **Android Safe**: Methods are safe no-ops on Android to prevent crashes (write once, run everywhere).
-- **TypeScript First**: Fully typed API.
-- **Expo Compatible**: Works with Expo Development Builds (via Prebuild).
-- **✨ Generic / Custom Activities**: Send ANY data structure without modifying native code!
-
----
-
-## 📦 Installation
+## Installation
 
 ```bash
-# npm
 npm install react-native-live-push-activities
-
-# yarn
+# or
 yarn add react-native-live-push-activities
 ```
 
-### iOS Setup (Mobile Linking)
+### iOS Setup
 
 ```bash
 cd ios && pod install
 ```
 
+### Android Setup
+
+No additional setup required. The library includes native Android implementation.
+
 ---
 
-## 🍎 iOS Implementation Guide (Deep Dive)
+## Quick Start
+
+### Check if Live Activities are enabled
+
+```typescript
+import LiveActivities from 'react-native-live-push-activities';
+
+const isEnabled = await LiveActivities.areActivitiesEnabled();
+```
+
+### Basic Activity Lifecycle
+
+```typescript
+// Start an activity
+const activityId = await LiveActivities.startActivity({
+  activityType: 'QuickCommerce',
+  attributes: { orderId: 'ORD-123' },
+  contentState: { status: 'confirmed', progress: 0 },
+});
+
+// Update the activity
+await LiveActivities.updateActivity(activityId, {
+  contentState: { status: 'on_the_way', progress: 70 },
+});
+
+// End the activity
+await LiveActivities.endActivity(activityId, {
+  dismissalPolicy: 'immediate',
+});
+```
+
+---
+
+## Pre-built Templates
+
+### Quick Commerce (Zepto-style)
+
+10-minute delivery tracking with countdown timer.
+
+```typescript
+import { QuickCommerceDelivery } from 'react-native-live-push-activities';
+
+// Start tracking
+const activityId = await QuickCommerceDelivery.start(
+  {
+    orderId: 'ORD-12345',
+    items: 'Groceries, Milk, Bread',
+    deepLink: 'myapp://order/ORD-12345',
+  },
+  {
+    status: 'confirmed',
+    progress: 0,
+    estimatedMinutes: 10,
+  }
+);
+
+// Update with rider info
+await QuickCommerceDelivery.update(activityId, {
+  status: 'on_the_way',
+  progress: 60,
+  estimatedMinutes: 4,
+  riderName: 'Rahul Kumar',
+  riderPhone: '+91-9876543210',
+  riderPhoto: 'https://example.com/rider.jpg',
+  currentLocation: 'Near Main Market',
+});
+
+// Mark as delivered
+await QuickCommerceDelivery.complete(activityId);
+
+// Or cancel
+await QuickCommerceDelivery.cancel(activityId);
+```
+
+### Food Delivery (Swiggy/Zomato-style)
+
+Restaurant order tracking with multiple stages.
+
+```typescript
+import { FoodDelivery } from 'react-native-live-push-activities';
+
+const activityId = await FoodDelivery.start(
+  {
+    orderId: 'FD-789',
+    restaurantName: 'Pizza Palace',
+    restaurantLogo: 'https://example.com/logo.png',
+    orderItems: 'Margherita Pizza, Garlic Bread',
+    deliveryAddress: '123 Main St',
+    deepLink: 'myapp://order/FD-789',
+  },
+  {
+    status: 'confirmed',
+    statusStage: 0, // 0=Confirmed, 1=Preparing, 2=Picked Up, 3=On the Way, 4=Delivered
+    estimatedMinutes: 30,
+  }
+);
+
+// Update stage
+await FoodDelivery.update(activityId, {
+  status: 'on_the_way',
+  statusStage: 3,
+  estimatedMinutes: 10,
+  riderName: 'Amit Singh',
+  riderPhone: '+91-9988776655',
+});
+```
+
+### E-commerce Delivery (Amazon/Flipkart-style)
+
+Multi-day package tracking.
+
+```typescript
+import { EcommerceDelivery } from 'react-native-live-push-activities';
+
+const activityId = await EcommerceDelivery.start(
+  {
+    orderId: 'EC-456',
+    productName: 'Wireless Headphones',
+    productImage: 'https://example.com/product.jpg',
+    courierPartner: 'BlueDart',
+    trackingUrl: 'https://track.example.com/EC-456',
+  },
+  {
+    status: 'shipped',
+    statusStage: 1, // 0=Ordered, 1=Shipped, 2=In Transit, 3=Out for Delivery, 4=Delivered
+    estimatedDeliveryDate: Date.now() + 3 * 24 * 60 * 60 * 1000, // 3 days
+    trackingNumber: 'BD123456789',
+    currentHub: 'Mumbai Distribution Center',
+  }
+);
+```
+
+### Other Templates
+
+```typescript
+import { Templates } from 'react-native-live-push-activities';
+
+// Ride Tracking (Uber/Ola-style)
+const rideId = await Templates.RideTracking.start(
+  {
+    driverName: 'John Doe',
+    vehicleNumber: 'MH 01 AB 1234',
+    vehicleType: 'Sedan',
+    pickup: 'Location A',
+    dropoff: 'Location B',
+  },
+  {
+    status: 'on-the-way',
+    estimatedArrival: Date.now() + 300000, // 5 minutes
+  }
+);
+
+// Sports Score
+const matchId = await Templates.SportsScore.start(
+  {
+    homeTeam: 'India',
+    awayTeam: 'Australia',
+    league: 'World Cup',
+  },
+  {
+    homeScore: 245,
+    awayScore: 189,
+    period: '2nd Innings',
+    isLive: true,
+  }
+);
+
+// Timer
+const timerId = await Templates.Timer.start(
+  { title: 'Oven Timer', description: 'Baking cookies' },
+  600 // 10 minutes in seconds
+);
+```
+
+---
+
+## Custom Activities
+
+For complete flexibility, create your own activity type:
+
+```typescript
+import LiveActivities from 'react-native-live-push-activities';
+
+// Define your custom attributes
+interface FlightAttributes {
+  flightNumber: string;
+  airline: string;
+  departure: string;
+  arrival: string;
+}
+
+// Start custom activity
+const activityId = await LiveActivities.startActivity<FlightAttributes>({
+  activityType: 'FlightStatus',
+  attributes: {
+    flightNumber: 'AI-123',
+    airline: 'Air India',
+    departure: 'DEL',
+    arrival: 'BOM',
+  },
+  contentState: {
+    status: 'boarding',
+    gate: 'A12',
+    scheduledTime: Date.now() + 1800000,
+  },
+});
+```
+
+---
+
+## Push Notification Updates
+
+Update activities from your server using push notifications.
+
+### Generate Payloads
+
+```typescript
+import { PushNotificationHelper } from 'react-native-live-push-activities';
+
+// iOS APNs payload
+const iosPayload = PushNotificationHelper.generateIOSPayload(
+  'activity-123',
+  'push-token-abc',
+  { status: 'delivered', progress: 100 },
+  { title: 'Order Delivered!', body: 'Your order has arrived.' }
+);
+
+// Android FCM payload
+const androidPayload = PushNotificationHelper.generateAndroidPayload(
+  'notification-123',
+  'QuickCommerce',
+  { status: 'on_the_way', progress: 70 }
+);
+
+// Template-specific payloads
+const quickCommercePayload = PushNotificationHelper.generateQuickCommerceUpdate(
+  { status: 'on_the_way', progress: 70, estimatedMinutes: 4 },
+  { title: 'On the way!', body: 'Your order will arrive soon.' }
+);
+```
+
+### Get Push Token
+
+```typescript
+const pushToken = await LiveActivities.getPushToken(activityId);
+// Send this token to your server for push updates
+```
+
+---
+
+## API Reference
+
+### LiveActivities Class
+
+| Method | Description | Returns |
+|--------|-------------|---------|
+| `areActivitiesEnabled()` | Check if Live Activities are available | `Promise<boolean>` |
+| `startActivity(config)` | Start a new activity | `Promise<string>` |
+| `updateActivity(id, config)` | Update an existing activity | `Promise<void>` |
+| `endActivity(id, config?)` | End an activity | `Promise<void>` |
+| `getActiveActivities()` | Get all active activity IDs | `Promise<string[]>` |
+| `endAllActivities()` | End all active activities | `Promise<void>` |
+| `getPushToken(id)` | Get push token for server updates | `Promise<string \| null>` |
+
+### ActivityConfig
+
+```typescript
+interface ActivityConfig<T> {
+  activityType: string;           // Template type identifier
+  attributes: T;                  // Static attributes (set once)
+  contentState: Record<string, any>; // Dynamic content (updatable)
+  staleDate?: number;             // When activity becomes stale
+  relevanceScore?: number;        // 0-1 score for ranking
+}
+```
+
+### UpdateConfig
+
+```typescript
+interface UpdateConfig {
+  contentState: Record<string, any>;
+  alertConfig?: {
+    title?: string;
+    body?: string;
+    sound?: string;
+  };
+  staleDate?: number;
+}
+```
+
+### EndConfig
+
+```typescript
+interface EndConfig {
+  finalContent?: Record<string, any>;
+  dismissalPolicy?: 'immediate' | 'after-date' | 'default';
+}
+```
+
+---
+
+## iOS Native Setup
 
 ### 1. Enable Capabilities
 
-1. Open your project in Xcode (`.xcworkspace`).
-2. Select your **Project Target** > **Signing & Capabilities**.
-3. Add **Push Notifications** capability.
-4. Add to `Info.plist`:
-   ```xml
-   <key>NSSupportsLiveActivities</key>
-   <true/>
-   ```
+In Xcode, add to your `Info.plist`:
+
+```xml
+<key>NSSupportsLiveActivities</key>
+<true/>
+```
 
 ### 2. Create Widget Extension
 
-1. **File > New > Target** > **Widget Extension**.
-2. CHECK **"Include Live Activity"**.
-3. Name it (e.g., `LiveActivityExtension`).
+1. **File > New > Target** > **Widget Extension**
+2. Enable **"Include Live Activity"**
+3. Name it (e.g., `DeliveryWidget`)
 
-### 3. Setup Attributes (The "Bridge")
+### 3. Define Activity Attributes
 
-You must define the exact structs that the React Native library expects.
-Create a file named `ActivityAttributes.swift` in your **Widget Extension** and paste this:
+Create `ActivityAttributes.swift` in your Widget Extension:
 
 ```swift
 import ActivityKit
 import SwiftUI
 
-// 1. Pre-built Template: Ride Tracking
-public struct RideTrackingAttributes: ActivityAttributes {
+public struct QuickCommerceAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
         var status: String
-        var estimatedArrival: Date
-        var driverName: String?
+        var progress: Double
+        var estimatedMinutes: Int
+        var riderName: String?
+        var riderPhone: String?
+        var riderPhoto: String?
+        var currentLocation: String?
     }
-    var vehicleModel: String
-}
-
-// 2. ✨ GENERIC / CUSTOM ACTIVITY (Recommended for flexibility)
-// This allows you to send ANY JSON data from React Native!
-public struct GenericActivityAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
-        var data: String // JSON string of your dynamic content
-    }
-    var fixedData: String // JSON string of your static content
+    var orderId: String
+    var items: String?
+    var deepLink: String?
 }
 ```
 
-### 4. Create the UI (Widget Bundle)
-
-In `LiveActivityExtensionBundle.swift`:
+### 4. Create Activity UI
 
 ```swift
-import WidgetKit
-import SwiftUI
-
 @main
-struct LiveActivityBundle: WidgetBundle {
+struct DeliveryWidgetBundle: WidgetBundle {
     var body: some Widget {
-        RideTrackingWidget()
-        GenericActivityWidget()
+        QuickCommerceWidget()
     }
 }
 
-// Example UI for Generic Activity
-struct GenericActivityWidget: Widget {
+struct QuickCommerceWidget: Widget {
     var body: some WidgetConfiguration {
-        ActivityConfiguration(for: GenericActivityAttributes.self) { context in
-            // Parse JSON manually here if needed
-            // let data = try? JSONDecoder().decode(MyData.self, from: context.state.data.data(using: .utf8)!)
-
+        ActivityConfiguration(for: QuickCommerceAttributes.self) { context in
             VStack {
-                Text("Custom Activity")
-                Text(context.state.data) // Displays raw JSON (parse this!)
+                Text("Order \(context.attributes.orderId)")
+                Text(context.state.status)
+                ProgressView(value: context.state.progress)
             }
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.center) {
-                    Text("Dynamic Island")
+                    Text("\(context.state.estimatedMinutes) min")
                 }
             } compactLeading: {
-                Text("L")
+                Text("📦")
             } compactTrailing: {
-                Text("T")
+                Text("\(Int(context.state.progress))%")
             } minimal: {
-                Text("M")
+                Text("📦")
             }
         }
     }
@@ -135,152 +411,101 @@ struct GenericActivityWidget: Widget {
 
 ---
 
-## 💻 API & Usage
+## Android Implementation
 
-### Method 1: Using Pre-built Templates
+The library provides a foreground service with notification updates on Android.
 
-Best for improved type safety with standard use cases.
+### Features
 
-```typescript
-import { Templates } from 'react-native-live-push-activities';
+- Persistent notification tracking
+- Progress bar updates
+- Rider/delivery information
+- Deep link support
+- Multiple concurrent deliveries
 
-// Start
-const activityId = await Templates.RideTracking.start(
-  { vehicleModel: 'Tesla Y' },
-  { status: 'Arriving', estimatedArrival: Date.now() + 60000 }
-);
+### Notification Layouts
 
-// Update
-await Templates.RideTracking.update(activityId, {
-  status: 'Arrived',
-});
-```
-
-### Method 2: Custom / Generic Activity (Data-Driven)
-
-Pass any object, and it will be serialized as JSON to the `GenericActivityAttributes` struct.
-
-```typescript
-import LiveActivities from 'react-native-live-push-activities';
-
-// 1. Start Activity
-const activityId = await LiveActivities.startActivity({
-  activityType: 'GenericActivity', // Matches the Swift struct
-  attributes: {
-    customId: '123',
-    type: 'flight_status',
-  },
-  contentState: {
-    flight: 'AA123',
-    status: 'Boarding',
-    gate: 'A4',
-  },
-});
-
-// 2. Update (Pass new state object)
-await LiveActivities.updateActivity(activityId, {
-  contentState: {
-    flight: 'AA123',
-    status: 'Departed',
-    gate: 'A4',
-  },
-});
-```
+Custom layouts are provided for each template:
+- `notification_quick_commerce.xml`
+- `notification_food_delivery.xml`
+- `notification_ecommerce.xml`
 
 ---
 
-## 🤖 Android Usage
+## Expo Usage
 
-The library provides safe "No-Op" methods on Android. It won't crash, but it won't show anything.
-To implement a similar UI on Android (sticky notification), use `@notifee/react-native`.
+1. Install the package:
+   ```bash
+   npx expo install react-native-live-push-activities
+   ```
 
-```typescript
-import { Platform } from 'react-native';
-import LiveActivities from 'react-native-live-push-activities';
+2. Generate native projects:
+   ```bash
+   npx expo prebuild
+   ```
 
-if (Platform.OS === 'ios') {
-  await LiveActivities.startActivity(...);
-} else {
-  // Use Notifee for Android
-}
-```
+3. Open `ios/YourApp.xcworkspace` and set up the Widget Extension
 
----
-
-## 🖤 Usage with Expo (CNG)
-
-1. `npx expo install react-native-live-push-activities`
-2. Run `npx expo prebuild` to generate the ios/android folders.
-3. Open `ios/YourApp.xcworkspace`.
-4. Create the **Widget Extension** manually (Step 2 & 3 in Guide).
-5. Run `npx expo run:ios`.
+4. Run the app:
+   ```bash
+   npx expo run:ios
+   ```
 
 ---
 
-## 🤝 Contributing
-
-We welcome contributions! Please follow these steps to contribute:
-
-1.  **Check for existing issues** or open a new one.
-2.  **Fork the repository** and create your branch from `main`.
-3.  **Link your Pull Request** to an issue (e.g., `Closes #1`).
-4.  **Wait for review** from the maintainers.
-
-Please read our [Contributing Guide](.github/CONTRIBUTING.md) for more details.
-
-**Note**: Pull Requests without a linked issue will not be reviewed.
-
----
-
-## ❓ Troubleshooting
+## Troubleshooting
 
 ### CocoaPods Installation Issues
 
 **Error: "required a higher minimum deployment target"**
 
-If you see this error when running `pod install`:
+Update your `ios/Podfile`:
 
+```ruby
+platform :ios, '13.0'
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+    end
+  end
+end
 ```
-[!] CocoaPods could not find compatible versions for pod "react-native-live-push-activities":
-Specs satisfying the dependency were found, but they required a higher minimum deployment target.
-```
 
-**Solution**: Update your iOS deployment target in your `Podfile`:
+> **Note**: Live Activities require iOS 16.1+, but the package installs on iOS 13.0+.
 
-1. Open `ios/Podfile`
-2. Find the line with `platform :ios` (usually near the top)
-3. Update it to iOS 13.0 or higher:
-   ```ruby
-   platform :ios, '13.0'
-   ```
-4. Also ensure your project's deployment target matches. In `ios/Podfile`, add this at the bottom:
-   ```ruby
-   post_install do |installer|
-     installer.pods_project.targets.each do |target|
-       target.build_configurations.each do |config|
-         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
-       end
-     end
-   end
-   ```
-5. Run `pod install` again
+### Push Token is nil
 
-**Note**: While the package installs on iOS 13.0+, **Live Activities features only work on iOS 16.1+**. The library gracefully handles this with runtime checks.
+- Test on a **real device** (simulators don't receive push tokens)
+- Ensure Push Notification capability is enabled
+- Request notification permissions before starting activity
 
-### Other Common Issues
+### Updates Not Showing
 
-**Token is nil?**
+- Verify the `activityId` exists using `getActiveActivities()`
+- Check that Widget UI reads correct fields from `context.state`
+- Ensure `activityType` matches your Swift struct name
 
-- Ensure you are testing on a **real device**. Simulators often don't receive push tokens.
-- Ensure the app has Push Notification permission.
+### Android Notifications Not Updating
 
-**Update not showing?**
-
-- Verify the `activityId` exists.
-- Ensure your Widget UI reads the correct fields from `context.state`.
+- Check notification permissions are granted
+- Verify the foreground service is running
+- Check logcat for any errors in `DeliveryTrackingService`
 
 ---
 
-## 📜 License
+## Contributing
+
+1. Check for existing issues or open a new one
+2. Fork the repository and create your branch from `main`
+3. Link your Pull Request to an issue
+4. Wait for review
+
+See [Contributing Guide](.github/CONTRIBUTING.md) for details.
+
+---
+
+## License
 
 MIT

@@ -1,7 +1,12 @@
 {
-  "extends": "./tsconfig",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noUnusedParameters": false,
+    "noUnusedLocals": false
+  },
   "exclude": [
-    "example",
-    "lib"
+    "node_modules",
+    "lib",
+    "example"
   ]
 }
